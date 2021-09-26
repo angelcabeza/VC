@@ -18,7 +18,8 @@ def leeimagen(filename, flagColor):
     return img
     
 
-def mostrarimagen(imagen):
+def mostrarimagen(imagen,titulo=""):
+    plt.title(titulo)
     #Comprobamos si la imagen es tribanda
     if imagen.ndim == 3 and imagen.shape[2] >= 3:
         # Si es tribanda tenemos que recorrer la representación
@@ -55,11 +56,17 @@ def normalizarmatriz(matriz):
     maximo = np.max(matriz_normalizada)
     minimo = np.min(matriz_normalizada)
     
+    print(maximo)
+    
     # La normalizamos restando el mínimo a toda la matriz y diviendiendo entre
     # la diferencia entre el máximo y el mínimo, de esta manera no hay pérdida
     # de información
-    matriz_normalizada = (matriz_normalizada - minimo) / (maximo)
     
+    if maximo - minimo != 0:
+        matriz_normalizada = (matriz_normalizada - minimo) / (maximo)
+    else:
+        matriz_normalizada = matriz_normalizada - minimo
+        
     return matriz_normalizada
 
 def pintaI(imagen):
@@ -82,7 +89,7 @@ print("Ejercicio 3")
 # vez
 
 ################################################################################
-def pintMI (vim):
+def pintMI (vim,titulo=""):
     # Las imagenes que sean monobanda las vamos a convertir en tribanda
     # Para ello vamos a recorrer la lista y vamos a comprobar si alguna imagen
     # es monobanda, si lo es simplemente le vamos a agregar en profundidad dos
@@ -116,9 +123,9 @@ def pintMI (vim):
         
     # Concatenamos las imagenes y las mostramos    
     imagen = cv.hconcat(vim)
-    mostrarimagen(imagen)
-    
-################################################################################
+    mostrarimagen(imagen,titulo)
+
+############################################################################
 
 imagenes = []
   
@@ -144,25 +151,63 @@ def modificacolor(imagen, coordenadas, color):
     
     for coordenada in coordenadas:
         x,y = coordenada
-        
-        print(y, "  " , x)
+    
         resultado[y,x] = color
         
     return resultado
 
 
-imagen = leeimagen("./images/orapple.jpg",flagColor)
+imagen = leeimagen("./images/messi.jpg",flagColor)
 
 coordenadas = []
 
-centro = imagen.shape[0]/2, imagen.shape[1]/2
+centro = (imagen.shape[0] // 2) -25, (imagen.shape[1] // 2) - 25
 
 for i in range(0,50):
     for j in range(0,50):
-       coordenadas.append([i+centro[0],j+centro[1]])
+       coordenadas.append([i+centro[1],j+centro[0]])
                         
 imagen_nueva = modificacolor(imagen,coordenadas,[255,0,0])
 mostrarimagen(imagen_nueva)
 
 input("\n-------Pulsa una tecla para continuar-------\n")   
-    
+
+print ("Ejercicio 5")
+
+# Visualizar las imágenes dentro de la misma ventana junto con el título
+# correspondiente
+
+
+imagen1 = leeimagen("./images/messi.jpg",1)
+imagen2 = leeimagen("./images/dave.jpg",1)
+imagen3 = leeimagen("./images/logoOpenCV.jpg",1)
+imagen4 = leeimagen("./images/orapple.jpg",1)
+
+fig = plt.figure(figsize=(10,7))
+
+rows = 2
+columns = 2
+
+fig.add_subplot(rows,columns,1)
+
+plt.imshow(imagen1[:,:,::-1])
+plt.title('messi.jpg')
+
+fig.add_subplot(rows,columns,2)
+
+plt.imshow(imagen2[:,:,::-1])
+plt.title('dave.jpg')
+
+fig.add_subplot(rows,columns,3)
+
+plt.imshow(imagen3[:,:,::-1])
+plt.title('logoOpenCV.jpg')
+
+fig.add_subplot(rows,columns,4)
+
+plt.imshow(imagen4[:,:,::-1])
+plt.title('orapple.jpg')
+
+plt.show()
+
+input("\n-------Pulsa una tecla para continuar-------\n")  
