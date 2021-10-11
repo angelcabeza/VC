@@ -1,0 +1,79 @@
+Trabajar siempre con floats
+
+Mirar outer product porque creo que es igual que .dot
+
+------------------------------------------------------------------------------------------------------------------
+1.B
+
+
+
+
+
+------------------------------------------------------------------------------------------------------------------
+1.D
+
+Laplaciana es la suma de las segundas derivadas por sigma al cuadrado
+
+1º conv por filas con la dericada segunda de la gaussiana y por columnas la conv con la gaussiana
+
+2º conv por filas con la gaussiana y luego por columnas conv con la derivada segunda de la gaussiana
+
+3º sumamos dxx y dyy
+
+4º el resultado lo multp por sigma al cuadrado
+
+-----------------------------------------------------------------------------------------------------------------
+2.A
+
+Piramides --> base imagen original, bifuminas y la resizeas a la mitad del tamaño y así sucesivamente.
+
+Esto sirve para detectar objetos a distintas escalas.
+
+Hay que suavizar antes del resize porque si no lo haces y luego miras las imagenes más pequeñas lo que estaremos viendo
+será una imagen modificada con altas frecuencias y si haces primero el blur no habrá tantas altas frecuencias.
+
+(SUBIR NOTA: Hacer una piramide bifimunando (LA BUENA) y una sin bifuminar para comprarar)
+
+para alisar sigma=1 es suficiente aunque en la vida rael cada aplicación neceista un sigma concreto.
+
+------------------------------------------------------------------------------------------------------------------
+2.B
+
+Para construir la piramide laplaciana hay que:
+
+    El último nivel de la Gaussiana es el último nivel de la Laplaciana
+
+    Partimos de la imagen pequeña y lo expandimos con interpolación lineal de opencv
+
+    Restamos la imagen original en ese nivel - la imagen con la interpolación = nuevo nivel de la laplaciana
+
+Esta piramide en nuestra practica sirve para compresión de la información
+------------------------------------------------------------------------------------------------------------------
+2.C
+
+Se nos da la imagen pequeñita, para reconstruirlo:
+
+    Partimos de esta imagen pequeña, la agrandamos (con interpolación lineal) y sumamos la diferencia de la laplaciana y así sucesivamente
+
+
+
+(SUBIR NOTA: COMPARAR LA IMAGEN ORIGINAL CON LA RECONSTRUIDA PARA VER CUANTO VARIA (TIENE QUE VARIAR SUPER POCO))
+
+------------------------------------------------------------------------------------------------------------------
+BONUS:
+
+Escoger la imagen de altas frecuencias (con bordes marcados) y la imagen de bajas frecuencias (con bordes menos marcados)
+
+
+La de baja frecuencia la suavizamos a tope
+
+La de altas frecueencias le pasamos un filtro como la laplaciana de la gaussiana
+
+
+PARA COMPROBAR SI ESTA BIEN:
+
+HACEMOS LA PIRAMIDE GAUSSIANA Y VEMOS QUE SE VE A QUE DISTANCIA, SI UNA FIGURA PREDOMINA SIEMPRE EL EJERCICIO NO ESTA BIEN
+
+RECOMENDACION: LER EL PAPER PARA VER IDEAS INTERESANTES PARA ELEGIR SIGMA
+
+------------------------------------------------------------------------------------------------------------------
