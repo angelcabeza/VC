@@ -133,7 +133,7 @@ Máscaras y derivadas  \hspace{0.05cm} }
 \noindent\hspace*{\centeroffset}
 
 \centering
-\includegraphics[width=0.9\textwidth]{ugr.png}\\[0.5cm]
+\includegraphics[width=0.9\textwidth]{./imagenes_memoria/ugr.png}\\[0.5cm]
 
 \textsc{ \Large Práctica 1\\[0.2cm]}
 \textsc{ \Large Ángel Cabeza Martín}\\
@@ -214,5 +214,132 @@ Una vez calculado el sigma o el tamaño de la máscara, evaluaremos la función 
 \end{figure}
 
 Utilizamos esta fórmula ya que nos asegura que el tamaño de la máscara es al menos $3 \cdot \sigma$ y que dado un sigma este tamaño es impar. Ambas situaciones vimos en teoría que eran convenientes.
+
+Tras calcular las máscaras de tamaño 5,7 y 9 y comparar los resultados con las máscaras calculadas por la función \texttt{getDerivKernel} de OpenCV hemos obtenido los resultados de las figuras \ref{mask_1d_t5} \ref{mask_2d_t5} \ref{mask_1d_t7} \ref{mask_2d_t7} \ref{mask_1d_t9} \ref{mask_2d_t9}. Como vemos las máscaras no son iguales, observamos dos grandes diferencias:
+
+\begin{enumerate}
+	\item Las máscaras de la primera derivada están invertidas.
+	\item Cuanto mayor es el tamaño de la máscara, menor es el rango de valores en nuestras máscaras y mayor en las máscaras de getDerivKernels.
+\end{enumerate}
+
+La primera diferencia no es importante porque las máscaras son simétricas por lo que ambas máscaras suman 0. La segunda derivada se debe a que OpenCV no efectúa un kernel Gaussiano como tal, hace una aproximación usando los operadores Sobel o Scharr. Por lo tanto, nuestras máscaras son más exactas pero las de OpenCV son computacionalmente más rápidas.
+
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=12cm, scale=1]{./imagenes_memoria/1d_t5.png}
+	\caption{Comparativa de las máscaras de 1ª derivada de tamaño 5 de getDerivKernels y nuestra función}
+	\label{mask_1d_t5}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=12cm]{./imagenes_memoria/2d_t5.png}
+	\caption{Comparativa de las máscaras de 2ª derivada de tamaño 5 de getDerivKernels y nuestra función}
+	\label{mask_2d_t5}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=12cm]{./imagenes_memoria/1d_t7.png}
+	\caption{Comparativa de las máscaras de 1ª derivada de tamaño 7 de getDerivKernels y nuestra función}
+	\label{mask_1d_t7}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=12cm]{./imagenes_memoria/2d_t7.png}
+	\caption{Comparativa de las máscaras de 2ª derivada de tamaño 7 de getDerivKernels y nuestra función}
+	\label{mask_2d_t7}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=12cm]{./imagenes_memoria/1d_t9.png}
+	\caption{Comparativa de las máscaras de 1ª derivada de tamaño 9 de getDerivKernels y nuestra función}
+	\label{mask_1d_t9}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=12cm]{./imagenes_memoria/2d_t9.png}
+	\caption{Comparativa de las máscaras de 2ª derivada de tamaño 9 de getDerivKernels y nuestra función}
+	\label{mask_2d_t9}
+\end{figure}
+
+\subsection{Kernel binomial}
+En este ejercicio se nos pide calcular las máscaras de tamaño 5 y 7, tanto de alisamiento como de derivada, a partir de la aproximación binomial de la Gaussiana ([1,2,1]) y la máscara de derivada de orden 3 ([-1,0,1]. //
+
+Para hacer esto
+
+\subsection{Convolución}
+En este ejercicio se nos pide realizar una convolución en 2D, a partir de dos máscaras 1D. Para ello he implementado las siguientes funciones:
+
+\begin{itemize}
+	\item aniadeborde: Recibe como argumentos una imágen y la máscara con la que se va a convolucionar. Esta función hace uso del método CopyMakeBorder de OpenCV para añadir un borde con un tamaño igual a la mitad de la longitud de la máscara.
+	\item convolucionar: esta función recibe una imágen (con el borde ya añadido) y dos máscaras, una con la convolucionar por filas y otra por columnas (lo he hecho así porque me facilitaba el siguiente ejercicio pero realmente se podría hacer con una sola) y devuelve la imagen convolucionada.
+	\item Además me he servido de las funciones creadas en la práctica 0 para leer imágenes, dibujarlas etc...
+\end{itemize}
+
+Para hacer la convolución he seguido este esquema:
+
+\begin{itemize}
+	\item Calcular el tamaño del borde que se ha añadido a la imágen para saber dónde empieza la imágen original. Esto se hace dividiendo el tamaño de la máscara entre dos.
+	\item Calcular el tamaño de la imagen original (la imágen sin bordes) restando a la dimensión de la imagen actual el doble del borde calculado en el paso uno, ya que este borde se añade dos veces por filas y dos veces por columnas.
+	\item Crear una matriz con las dimensions calculadas en el paso anterior. Esta matriz será el resultado de hacer la convolución sobre la imagen
+	\item Recorrer la imágen con bordes pero sin contar con ellos, es decir, recorrer la imagen desde el tamaño del borde hasta el extremo de la imagen menos el borde. De esta forma recorremos toda la imagen original, centrando la máscara en el pixel que estemos recorriendo y multiplicando esta por los pixeles de una misma fila, pero tantos como sea el tamaño de la máscara. El resultado de esta operación se almacena en la matriz creada en el paso 3.
+	\item Tras aplicar la máscara de manera horizontal, le añadimos los bordes nuevamente a la imagen obtenida, para aplicar la máscara de manera vertical y que la imágen no disminuya en tamaño.
+	\item Repetimos el paso 4 pero por columnas,es decir, mantenemos la columna y escogemos un rango de pixeles en las filas para aplicar la máscara vertical.
+	\item Devolvemos la imágen generada.
+\end{itemize}
+
+Hay que destacar que me he servido de la propiedad de separabilidad  para poder aplicar primero la máscara 1D por filas y luego por columnas. Si la Gaussiana no tuviese esta propiedad, no sería posible realizar la convolución de esta manera. \\
+
+Una vez implementada la convolución, vamos a comparar los resultados que obtenemos nosotros con los que se obtienen usando la función de OpenCV GaussianBlur con una mácara de tamaño 9:
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{./imagenes_memoria/bycicle_bifuminada.png}
+	\caption{Comparación entre convolución propia (a la derecha) y GaussianBlur (abajo izuierda)}
+	\label{conv_propia_vs_openCV}
+\end{figure}
+
+Como vemos la diferencia entre nuestra convolución y la de OpenCV es mínima, por lo tanto podemos asumir que la convolución está implementada de manera correcta. La diferencia que hay se puede deber a que como vimos anteriormente OpenCV calcula las máscaras de manera distinta a como lo hacemos nosotros.
+
+\pagebreak
+
+Tras haber convolucionado con una máscara de suavizado la imágen, vamos a hacerlo con las máscaras de derivadas y obtenemos lo siguiente:
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{./imagenes_memoria/bycicle_derivadas.png}
+	\caption{Imagén convolucionada con la primera derivada (a la derecha) y con la segunda derivada (abajo izquierda}
+	\label{conv_1y2d_bycicle}
+\end{figure}
+
+Como vemos obtenemos el resultado esperado ya que hemos usado las derivadas de la Gaussiana que son filtros de detección de bordes y es justo lo que observamos en la imágen.
+
+\subsection{Máscara Laplaciana}
+En este ejercicio se nos pide calcular la máscara Laplaciana a partir de una Gaussiana y comparar los resultados con la función Laplaciana de OpenCV. \\
+
+Como sabemos, la máscara Laplaciana es la suma de la convolución por filas con la derivada segunda de la Gaussiana y, luego, por columnas, la convolución con la Gaussiana más la convolución por filas con la Gaussiana y, luego, por columnas, la convolución con la derivada segunda de la Gaussiana y todo por $\sigma²$ (\ref{f_laplaciana} para verlo de forma matemática).
+
+\begin{figure}[H]
+	\centering
+	\[L = \sigma² \cdot (G_{xx}(x,y,\sigma) + G_{yy}(x,y,\sigma)) \]
+	\caption{Función Gaussiana.}
+	\label{f_laplaciana}
+\end{figure}
+
+Por este motivo, de cara a calcular la imagen con la máscara Laplaciana aplicaremos una convolución de la imágen con la máscara de la segunda derivada de la Gaussiana por filas y la máscara Gaussiana por columnas, a esto lo llamaremos $dxx$. Después aplicaremos una convolución a la imágen original con la máscara Gaussiana por filas y la máscara de la segunda derivada de la Gaussiana por columnas, a esto lo llamaremos $dyy$. Finalmente multiplicaremos por $\sigma²$ la suma de $dxx$ y $dyy$ y esta será la máscara Laplaciana que devolveremos. \\
+
+Y, calculando la máscara Laplaciana como hemos comentado, obtenemos los siguientes resultados: 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{./imagenes_memoria/motocicleta_laplaciana.png}
+	\caption{Comparación de imágenes tras aplicar la máscara Laplaciana con distinto $\sigma$)}
+	\label{comp_sigma_laplaciana}
+\end{figure}
 
 \end{document}
