@@ -96,24 +96,33 @@ mascara_segunda_gaussiana_tam9 = kernelGaussiano1D(func=segundaGaussiana,tam=9)
 
 # Calculamos las mascaras para tamaño 5 con getDerivKernels de openCV
 #mascara_gaussiana_tam5_opencv = cv.getDerivKernels(0,0,ksize=5)
-mask_1d_tam5_cv, trash = cv.getDerivKernels(1,0,ksize=5)
-mask_2d_tam5_cv, trash = cv.getDerivKernels(2,0,ksize=5)
+mask_tam5_cv,_ = cv.getDerivKernels(0,1,ksize=5,normalize=1)
+mask_1d_tam5_cv, trash = cv.getDerivKernels(1,0,ksize=5,normalize=1)
+mask_2d_tam5_cv, trash = cv.getDerivKernels(2,0,ksize=5,normalize=1)
 
 # Calculamos las mascaras para tamaño 7 con getDerivKernels de openCV
-#mascara_gaussiana_tam7_opencv = cv.getDerivKernels(0,0,ksize=7)
-mask_1d_tam7_cv, trash = cv.getDerivKernels(1,0,ksize=7)
+mask_tam7_cv,_ = cv.getDerivKernels(0,1,ksize=7,normalize=1)
+mask_1d_tam7_cv, trash = cv.getDerivKernels(1,0,ksize=7,normalize=1)
 mask_2d_tam7_cv, trash  = cv.getDerivKernels(2,0,ksize=7)
 
 # Calculamos las mascaras para tamaño 9 con getDerivKernels de openCV
-#mascara_gaussiana_tam9_opencv = cv.getDerivKernels(0,0,ksize=9)
-mask_1d_tam9_cv, trash = cv.getDerivKernels(1,0,ksize=9)
-mask_2d_tam9_cv, trash  = cv.getDerivKernels(2,0,ksize=9)
+mask_tam9_cv,_ = cv.getDerivKernels(0,1,ksize=9,normalize=1)
+mask_1d_tam9_cv, trash = cv.getDerivKernels(1,0,ksize=9,normalize=1)
+mask_2d_tam9_cv, trash  = cv.getDerivKernels(2,0,ksize=9,normalize=1)
 
 
 # Vamos a pintar las mascaras que obtenemos para ver sus diferencias
 x = []
 for i in range(-2,3):
     x.append(i)
+
+plt.title("Mascaras Gaussianas para tamaño 5")
+plt.plot(x,mascara_gaussiana_tam5,'-or',label='Mascara función casera')
+plt.plot(x,mask_tam5_cv,'-ob',label='Máscara función openCV')
+plt.legend()
+plt.xlabel("Puntos evaluados")
+plt.ylabel("Valor de la primera derivada de la gaussiana")
+plt.show()
 
 plt.title("Mascaras 1ª derivada de la gaussiana para tamaño 5")
 plt.plot(x,mascara_primera_gaussiana_tam5,'-or',label='Mascara función casera')
@@ -142,6 +151,14 @@ x = []
 for i in range(-3,4):
     x.append(i)
 
+plt.title("Mascaras Gaussianas para tamaño 7")
+plt.plot(x,mascara_gaussiana_tam7,'-or',label='Mascara función casera')
+plt.plot(x,mask_tam7_cv,'-ob',label='Máscara función openCV')
+plt.legend()
+plt.xlabel("Puntos evaluados")
+plt.ylabel("Valor de la primera derivada de la gaussiana")
+plt.show()
+
 plt.title("Mascaras 1ª derivada de la gaussiana para tamaño 7")
 plt.plot(x,mascara_primera_gaussiana_tam7,'-or',label='Mascara función casera')
 plt.plot(x,mask_1d_tam7_cv,'-ob',label='Máscara función openCV')
@@ -167,6 +184,15 @@ input("<--- Pulse cualquier tecla para continuar --->")
 x = []
 for i in range(-4,5):
     x.append(i)
+
+plt.title("Mascaras Gaussianas para tamaño 9")
+plt.plot(x,mascara_gaussiana_tam9,'-or',label='Mascara función casera')
+plt.plot(x,mask_tam9_cv,'-ob',label='Máscara función openCV')
+plt.legend()
+plt.xlabel("Puntos evaluados")
+plt.ylabel("Valor de la primera derivada de la gaussiana")
+plt.show()
+
 
 plt.title("Mascaras 1ª derivada de la gaussiana para tamaño 9")
 plt.plot(x,mascara_primera_gaussiana_tam9,'-or',label='Mascara función casera')
@@ -376,6 +402,8 @@ def diferenciaImagenes(imagen1,imagen2):
     pixeles_diff_1 = 0
     pixeles_diff_15 = 0
     
+    dist = np.linalg.norm(imagen1-imagen2)
+    
     for i in range(diferencia_imagenes.shape[0]):
         for j in range(diferencia_imagenes.shape[1]):
             if (diferencia_imagenes[i][j] > 0.0001):
@@ -395,11 +423,11 @@ def diferenciaImagenes(imagen1,imagen2):
     print("El numero de pixeles diferentes en la imagen es de: {}".format(pixeles_diff))
     print("El numero de pixeles diferentes con una diferencia > 1 es de: {}".format(pixeles_diff_1))
     print("El numero de pixeles diferentes con una diferencia > 15 es de: {}".format(pixeles_diff_15))
-        
+    print("La distancia euclídea entre las dos imágenes es de: ",dist)
     
     
 def pintarresultados (imagenes,titulos):
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,5))
     ax = []
     
     #plt.close(1)
@@ -433,8 +461,9 @@ imagen_borde = aniade_bordes(imagen, mascara, cv.BORDER_CONSTANT)
 
 nueva_imagen = convulcionar(imagen_borde, mascara)
 
-print("Solucion matriz de ejemplo: ",nueva_imagen)
+print("Solucion matriz de ejemplo: ")
 print()
+print(nueva_imagen)
 
 bicycle = leeimagen('./imagenes/bicycle.bmp',0).astype(float)
     
@@ -480,8 +509,6 @@ pintarresultados([bycicle_1_deri,bycicle_1_deri_opencv],titulos)
 
 titulos = ["Bicycle 2 derivada", "Bicycle 2 derivada OpenCV"]
 pintarresultados([bycicle_2_deri,bycicle_2_deri_opencv], titulos)
-pintarresultados([bycicle_2_deri], ["Bicycle 2 derivada"])
-
 
 ###############################################################################
 
@@ -511,7 +538,7 @@ def Laplaciana(imagen,sigma=None,tam=None):
     dxx = convulcionar(imagen_borde,mascara_seg_gaussiana,mascara_gaussiana)
     dyy = convulcionar(imagen_borde, mascara_gaussiana,mascara_seg_gaussiana)
     
-    imagen_laplaciana = sigma**2 * (np.array(dxx) + np.array(dyy))
+    imagen_laplaciana = (np.array(dxx) + np.array(dyy))
 
     return imagen_laplaciana
 
@@ -522,11 +549,28 @@ cat = leeimagen('./imagenes/cat.bmp', 0).astype(float)
 
 
 cat_s1 = Laplaciana(cat, sigma=1)
-
 cat_s2 = Laplaciana(cat, sigma=3)
+
+cat_s1 = normalizarmatriz(cat_s1)
+cat_s2 = normalizarmatriz(cat_s2)
 
 titulos = ['Laplaciana sigma=1','Laplaciana sigma=3']
 pintarresultados([cat_s1,cat_s2],titulos)
+
+
+tam = 2 * 3 * 1 + 1
+cat_s1_cv = cv.Laplacian(cat,cv.CV_64F,ksize=tam,borderType=cv.BORDER_REFLECT)
+tam = 2 * 3 * 3 + 1
+cat_s2_cv = cv.Laplacian(cat,cv.CV_64F,ksize=tam,borderType=cv.BORDER_REFLECT)
+
+
+cat_s1_cv = normalizarmatriz(cat_s1_cv)
+cat_s2_cv = normalizarmatriz(cat_s2_cv)
+
+titulos = ['Laplaciana OpenCV sigma=1','Laplaciana OpenCV sigma=3']
+pintarresultados([cat_s1_cv,cat_s2_cv],titulos)
+
+diferenciaImagenes(cat_s1, cat_s1_cv)
 
 input("<--- Pulse cualquier tecla para continuar --->")
 
@@ -634,11 +678,19 @@ def piramideGaussiana (imagen,sigma,niveles,tipo_borde):
         img_actual = aniade_bordes(img_actual, mascara, tipo_borde)
         img_convol = convulcionar(img_actual, mascara)
         img_actual = img_convol[::2,::2]
-        #img_actual = normalizarmatriz(img_actual)
         piramide.append(img_actual)
         
     return piramide
 
+def piramideGaussianaCV (imagen,niveles, tipo_borde):
+    solucion = [imagen]
+    
+    for i in range(niveles):
+        solucion.append(cv.pyrDown(solucion[-1], borderType=tipo_borde))
+    
+    return solucion
+
+ 
 def piramideLaplaciana (imagen,sigma,niveles,tipo_borde):
     piramide = []
     piramide_gauss = piramideGaussiana(imagen, sigma, niveles, tipo_borde)
@@ -656,25 +708,48 @@ def piramideLaplaciana (imagen,sigma,niveles,tipo_borde):
     piramide.append(piramide_gauss[-1])
     
     return piramide
+
+def piramideLaplacianaCV (imagen,niveles,tipo_borde):
+    piramide = piramideGaussianaCV(imagen, niveles, tipo_borde)
     
+    solucion = [piramide[-1]]
     
+    for i in range(niveles):
+        tam = (piramide[-(i+2)].shape[1], piramide[-(i+2)].shape[0])
+        i_reescalada = cv.pyrUp(piramide[-(i+1)], dstsize=tam)
+
+        laplaciana = piramide[-(i+2)] - i_reescalada
+        
+        solucion.append(laplaciana)
+        
+    solucion = solucion[::-1]
+    
+    return solucion
+
 
 motocicleta = leeimagen('./imagenes/motorcycle.bmp', 0).astype(float)
 piramide = piramideGaussiana(motocicleta,1,4,cv.BORDER_REFLECT)
+piramideCV = piramideGaussianaCV(motocicleta,4,cv.BORDER_REFLECT)
 
+pintaMIZP(piramideCV,"Piramide Gaussiana OpenCV")
 pintaMIZP(piramide,"Piramide Gaussiana")
 
-
+#########################################################################################
 input("<--- Pulse cualquier tecla para continuar --->")
 print("Ejercicio 2B")
 
 piramideLap = piramideLaplaciana(motocicleta,1,4,cv.BORDER_REFLECT)
+piramideLapCV = piramideLaplacianaCV(motocicleta,4,cv.BORDER_REFLECT)
 
 for i in range(len(piramideLap)):
     piramideLap[i] = normalizarmatriz(piramideLap[i])
-    
+    piramideLapCV[i] = normalizarmatriz(piramideLapCV[i])
+
 imagen = apilar_piramide(piramideLap)
+imagenCV = apilar_piramide(piramideLapCV)
+
 mostrarimagen(imagen,"Piramide Laplaciana")
+mostrarimagen(imagenCV,"Piramide Laplaciana CV")
 
 input("<--- Pulse cualquier tecla para continuar --->")
 print("Ejercicio 2C")
@@ -762,7 +837,7 @@ pintarresultados([img_fish_altas,img_submarine_bajas,img_hibrida_submarine], ['A
 img_cat_altas = leeimagen('./imagenes/cat.bmp',0)
 img_dog_bajas = leeimagen('./imagenes/dog.bmp',0)
 
-img_cat_altas = normalizarmatriz(Laplaciana(img_cat_altas,sigma=1.8))
+img_cat_altas = normalizarmatriz(Laplaciana(img_cat_altas,sigma=2))
 
 mascara_bajas_dog = kernelGaussiano1D(sigma=5)
 
@@ -810,7 +885,7 @@ img_altas_frecuencias = normalizarmatriz(Laplaciana(img_altas_frecuencias,sigma=
 
 
 mascara_bajas_frecuencias = kernelGaussiano1D(sigma=5)
-img_bajas_frecuencias = aniade_bordes(img_bajas_frecuencias, mascara_bajas_frecuencias, cv.BORDER_CONSTANT)
+img_bajas_frecuencias = aniade_bordes(img_bajas_frecuencias, mascara_bajas_frecuencias, cv.BORDER_REFLECT)
 img_bajas_frecuencias = normalizarmatriz(convulcionar(img_bajas_frecuencias, mascara_bajas_frecuencias))
 
 img_hibrida = img_bajas_frecuencias + img_altas_frecuencias
@@ -818,7 +893,6 @@ img_hibrida = img_bajas_frecuencias + img_altas_frecuencias
 img_hibrida = normalizarmatriz(img_hibrida)
 
 pintarresultados([img_altas_frecuencias,img_bajas_frecuencias,img_hibrida], ['Altas Frecuencias', 'Bajas Frecuencias','Hibrida'])
-print("Clipping en einstein")
 ################################################################################
 img_bird_altas = leeimagen('./imagenes/bird.bmp',1)
 img_plane_bajas = leeimagen('./imagenes/plane.bmp',1)
@@ -827,16 +901,15 @@ img_bird_altas = normalizarmatriz(Laplaciana(img_bird_altas,sigma=3))
 
 mascara_bajas_plane = kernelGaussiano1D(sigma=6)
 
-img_plane_bajas = aniade_bordes(img_plane_bajas, mascara_bajas_plane, cv.BORDER_CONSTANT)
+img_plane_bajas = aniade_bordes(img_plane_bajas, mascara_bajas_plane, cv.BORDER_REFLECT)
 img_plane_bajas = normalizarmatriz(convulcionar(img_plane_bajas, mascara_bajas_plane))
 
 img_hibrida_plane = img_plane_bajas + img_bird_altas
 
-img_hibridaplane = normalizarmatriz(img_hibrida_plane)
+img_hibrida_plane = normalizarmatriz(img_hibrida_plane)
 
 pintarresultados([img_bird_altas,img_plane_bajas,img_hibrida_plane], ['Altas Frecuencias' , 'Bajas Frecuencias', 'Hibrida'])
 
-print("Clipping n bird")
 #####################################################################################
 
 img_fish_altas = leeimagen('./imagenes/fish.bmp', 1)
@@ -846,7 +919,7 @@ img_fish_altas = normalizarmatriz(Laplaciana(img_fish_altas,sigma=2))
 
 mascara_bajas_submarine = kernelGaussiano1D(sigma=8)
 
-img_submarine_bajas = aniade_bordes(img_submarine_bajas, mascara_bajas_submarine, cv.BORDER_CONSTANT)
+img_submarine_bajas = aniade_bordes(img_submarine_bajas, mascara_bajas_submarine, cv.BORDER_REFLECT)
 img_submarine_bajas = normalizarmatriz(convulcionar(img_submarine_bajas, mascara_bajas_submarine))
 
 img_hibrida_submarine = img_submarine_bajas + img_fish_altas
@@ -855,17 +928,16 @@ img_hibrida_submarine = normalizarmatriz(img_hibrida_submarine)
  
 pintarresultados([img_fish_altas,img_submarine_bajas,img_hibrida_submarine], ['Altas Frecuencias' , 'Bajas Frecuencias', 'Hibrida'])
 
-print("Clipping en submarine")
 ######################################################################################
 
 img_cat_altas = leeimagen('./imagenes/cat.bmp',1)
 img_dog_bajas = leeimagen('./imagenes/dog.bmp',1)
 
-img_cat_altas = normalizarmatriz(Laplaciana(img_cat_altas,sigma=1.8))
+img_cat_altas = normalizarmatriz(Laplaciana(img_cat_altas,sigma=2))
 
 mascara_bajas_dog = kernelGaussiano1D(sigma=5)
 
-img_dog_bajas = aniade_bordes(img_dog_bajas, mascara_bajas_dog, cv.BORDER_CONSTANT)
+img_dog_bajas = aniade_bordes(img_dog_bajas, mascara_bajas_dog, cv.BORDER_REFLECT)
 img_dog_bajas = normalizarmatriz(convulcionar(img_dog_bajas, mascara_bajas_dog))
 
 img_hibrida_dog = img_dog_bajas + img_cat_altas
@@ -874,4 +946,49 @@ img_hibrida_dog = normalizarmatriz(img_hibrida_dog)
 
 pintarresultados([img_cat_altas,img_dog_bajas,img_hibrida_dog], ['Altas Frecuencias' , 'Bajas Frecuencias', 'Hibrida'])
 
+# Piramide para Marilyn y Einstein
+piramide = piramideGaussiana(img_hibrida, 1, 4, cv.BORDER_CONSTANT)
+imagen = apilar_piramide(piramide)
+mostrarimagen(imagen,"Piramide Marilyn y Einstein")
+
+# Piramide para Bird y plane
+piramide = piramideGaussiana(img_hibrida_plane, 1, 4, cv.BORDER_CONSTANT)
+imagen = apilar_piramide(piramide)
+mostrarimagen(imagen,"Piramide Plane y Bird")
+
+# Piramide para Fish y Submarine
+piramide = piramideGaussiana(img_hibrida_submarine, 1, 4, cv.BORDER_CONSTANT)
+imagen = apilar_piramide(piramide)
+mostrarimagen(imagen,"Piramide Fish y Submarine")
+
+# Piramide para Dog y Cat
+piramide = piramideGaussiana(img_hibrida_dog, 1, 4, cv.BORDER_CONSTANT)
+imagen = apilar_piramide(piramide)
+mostrarimagen(imagen,"Piramide Dog y Cat")
+
 input("<--- Pulse cualquier tecla para continuar --->")
+
+##############################################################################
+
+print("Bonus 3")
+
+img_mr_bean_bajas = leeimagen('./imagenes/mr_bean.jpg', 1)
+img_zapatero_altas = leeimagen('./imagenes/zapatero.jpg',1)
+
+img_zapatero_altas = normalizarmatriz(Laplaciana(img_zapatero_altas,sigma=1.5))
+
+mascara_bajas_mrbean = kernelGaussiano1D(sigma=4)
+
+img_mr_bean_bajas = aniade_bordes(img_mr_bean_bajas,mascara_bajas_mrbean,cv.BORDER_REFLECT)
+img_mr_bean_bajas = normalizarmatriz(convulcionar(img_mr_bean_bajas,mascara_bajas_mrbean))
+
+img_hibrida_zapatero = img_mr_bean_bajas + img_zapatero_altas
+
+img_hibrida_zapatero = normalizarmatriz(img_hibrida_zapatero)
+
+pintarresultados([img_zapatero_altas,img_mr_bean_bajas,img_hibrida_zapatero], ['Altas Frecuencias' , 'Bajas Frecuencias', 'Hibrida'])
+
+piramide = piramideGaussiana(img_hibrida_zapatero, 1, 4, cv.BORDER_CONSTANT)
+imagen = apilar_piramide(piramide)
+mostrarimagen(imagen,"Piramide Zapatero y Mr Bean")
+###############################################################################
