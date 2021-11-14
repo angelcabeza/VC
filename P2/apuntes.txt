@@ -1,0 +1,113 @@
+UN punto de interes tiene:
+    -keypoint: localización geometrica
+    -descriptor: vector que lo caracteriza (al punto)
+
+(PARA LOS DESCRIPTORES USAREMOS OPENCV)
+
+Para detectar los puntos vasmo a usar SIFT.
+
+1º -> detectar los puntos de interes
+2º -> extraer el descriptor de cada punto de interes (esto nos puede servir para emparejar puntos de interes de dos imagenes y poder unirlas)
+3º -> Determinar correspondencias para hacer algo (en este caso crear un panorama)
+
+Con este proceso lo que queremos es un detectro que sea repetible, es decir, que detecte los mismo puntos en imagenes iguales con transformaciones
+en ellas y que detecte que ambas imagenes son iguales.
+
+Detector de Harris 
+Vas moviendo una ventanita sobre la imagen, cuando moviendo la ventanita en distintas direcciones no haya muchas variaciones --> zona plana
+pero si lo mueves en un borde sí hay variacion por lo tanto podemos estar  en una esquina.
+
+Es invariante a la rotación porque la esquina da igual como este situada, la variacion sigue estando, sin embargo no es invariante a la escalada
+de imagen porque si hacemos zoom a una esquina va a detectar varios bordes en vez de uno.
+
+SIFT
+Sfit consta de octavas,  dentro de cada octava hay escalas, cada escala es una rejilla. Se aplica el mismo sigma en cada escala de diferentes octavas, es decir,
+si en la escala 0 de la octava 1 usas sigma 3 en la escala 0 de la octava 9837593 se aplica sigma 3.
+
+Cuando se hable de escala Laplaciana hay que calcular la diferencia de gaussianas.
+
+PROCEDIMIENTO:
+
+    - Partimos d la imagen original, sta imagen asumimos que tiene sigma 0.5 (PERO EN NUESTRA PRACTICA ES 0.8 PARA QUE SEA MAS FACIL)
+    - La imagen original se sume que cada pixel esta a una distancia (delta) de 1, si queremos aumentar l doble la imagen delta=0.5 y si queremos hacerla el doble de pequeña (delta = 2)
+    - El sigma es el nivel de suavizado absoluto
+    - Calculamos la imagen con sigma 0.8 (aumentando la imagen original al doble)
+    - Vamos suavizando
+    - Cogemos la escala que no es relleno (la última que sea roja en el dibujo) y le reducimos el tamaño a la mitad
+    - Repetir
+
+Bonus:
+    1.- Hacer interpolacion 3D
+
+
+Ejercicio 1 -> construir una piramide de lowe de 4 octavas 
+
+
+Ejercicio 3 -> Crear Canvas
+                Crar homografía d traslación al Canvas
+                Crear la homografia de la primera imagen con la segunda
+                Crear la homografia de la tercera con la segunda
+
+EScoger la imagen del centro como imagen de referencia para que haya lla menor cantidad de deformación posible y esta imagen será la última que 
+introduciremos al canvas porque es la única que no tiene deformación (es la de mas calidad).
+
+
+
+SIGMA (IMPORTANTE PARA EL EJERCICIO 1 CASI QUE LO RESUELVE)
+
+En esencia la idea es que convolucionar varias vecs con un sigma pequñeo es lo mismo que si suavizamos una única vz on un sigma grande.
+La convolución de dos gaussianas es otra gaussiana y la convolución es asociativa.
+
+Suavizar dos veces con un kernel gaussiano de sigma es lo mismo que suavizar una vez con un kernel gaussiano de sigma * raiz de 2
+
+y suavizar 3 vecs con un kernel gaussiano de sigma es lo mismo que suavizar con raiz de la suma de los 3 sigmas al cuadrado
+
+Para ir de sigma 0.5 a 0.8:
+    -> raiz(0.8^2 - 0.5^2) = sigma necesario para pasar de un sigma a otro.
+
+Esto enlaza con lo de sift porque queremos obtener es una imagen semilla con sigma de 1.6 y nosotros empezamos con una imagen de 0.8 
+
+Sigma inicial de captura = 0.8
+DUplicas el tamaño de la imagen y llegamos a v0
+aplicamos la formula de sigma_s y obtenemos los siguientes sigmas hasta v3
+reducimos v3 y el resultado tendría que ser un sigma de 1.6.
+
+Si lo hacemos así cada scala al principio d cada octava tienen sigma 1.6
+
+¿que operacion sobre la imagen original nos permite fijar un valor de sigma=1.6 en la imagen sevilla?
+No le explicamos ningun kernel a la imagen original, lo que hacemos es interpolación (aumentar el tamaño el doble) aplicación iterativa de los sigmas (calculados con la fórmula de sigma s) e interpolación (dividir el tamaño entre 2) otra vez
+
+Es decir con duplicar tamaño e interpolar nos llega.
+
+
+
+
+
+
+
+
+RANSAC:
+es un metodo de prueba y error.
+
+su idea clave es encontrar la mejor pariticón de puntos en el conjunto de inliers y outliers y estimar el modelo a partir de los inlierns
+
+Aproimación estandar para tratar outliers
+
+3 pasos:
+    - Mustrear el conjunto de puntos (en nuestro caso pars de puntos en correspondencia)
+    - Calcuar los parámtros de mi modelo usando los puntos mustreados
+    - Calcular el soporte que tiene nuestro modelo en base a la cantidad de inliers
+    - Repetir hasta tener el soporte mas robusto
+
+No solo se usa en homografías, se usa en más sitios
+
+¿Cuántas repeticiones hay que hacer para calcular un buen soporte?
+    Para ello tenemos que ver:
+        Número de puntos muestreados (s): dependen de la aplicación
+        % outliers (e): en general necesitamos una aproximación
+        Numero de intentos (T): esto lo debemos escoger de manera que con una probabilidad p (que escogemos nosotros), al menos un conjunto aleatorio esté libre de outliers.
+
+
+RANSAC funciona bien con pocos puntos, cuanto mas puntos peor funciona.
+
+FUnciona bien hasta 10 parametros, es robusto a outliers, sensible a la selección del umbral 

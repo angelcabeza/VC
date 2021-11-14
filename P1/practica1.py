@@ -677,7 +677,7 @@ def piramideGaussiana (imagen,sigma,niveles,tipo_borde):
     for i in range(niveles):
         img_actual = aniade_bordes(img_actual, mascara, tipo_borde)
         img_convol = convulcionar(img_actual, mascara)
-        img_actual = img_convol[::2,::2]
+        img_actual = img_convol[:,::2]
         piramide.append(img_actual)
         
     return piramide
