@@ -15,9 +15,30 @@ import time
 
 np.random.seed(1)
 
-print("Ejercicio 1")
+print("Ejercicio 1A-C")
 
 
+def pintarresultados (imagenes,titulos):
+    fig = plt.figure(figsize=(10,5))
+    ax = []
+    
+    #plt.close(1)
+    
+    cols = len(imagenes)
+    filas = 1
+
+    for i in range(1, cols*filas+1):
+        ax.append(fig.add_subplot(filas,cols,i))
+        
+        ax[-1].set_title(titulos[i-1])
+        
+        if imagenes[i-1].ndim == 3 and imagenes[i-1].shape[2] >= 3:
+            plt.imshow(imagenes[i-1][:,:,::-1])
+        else:
+            plt.imshow(imagenes[i-1], cmap='gray')
+            
+    plt.show()
+    
 def mostrarimagen(imagen,titulo=""):
     plt.figure(figsize=(10,5))
     plt.title(titulo)
@@ -59,27 +80,6 @@ def leeimagen(filename, flagColor):
     
     return img
     
-
-def pintarresultados (imagenes,titulos):
-    fig = plt.figure(figsize=(10,5))
-    ax = []
-    
-    #plt.close(1)
-    
-    cols = len(imagenes)
-    filas = 1
-
-    for i in range(1, cols*filas+1):
-        ax.append(fig.add_subplot(filas,cols,i))
-        
-        ax[-1].set_title(titulos[i-1])
-        
-        if imagenes[i-1].ndim == 3 and imagenes[i-1].shape[2] >= 3:
-            plt.imshow(imagenes[i-1][:,:,::-1])
-        else:
-            plt.imshow(imagenes[i-1], cmap='gray')
-            
-    plt.show()
     
 def normalizarmatriz(imagen):
     # Convertimos la imagen a tribanda si esta no lo es
@@ -290,28 +290,25 @@ def mostrar_im_en_bloque(vim, titulos, nrows=1, normalizar=False, tam_fig=(10, 5
         
         fig.add_subplot(nrows, ncols, i+1)
         
+        plt.axis('off')
         if imagen.ndim == 3:
-            # Si es tribanda hay que rotarla porque OpenCV lee en GBRy matplotlib utiliza RGB
             if normalizar:
+                plt.axis('off')
                 plt.imshow(normalizarmatriz(imagen)[:,:,::-1])
             else:
+                plt.axis('off')
                 plt.imshow(imagen[:,:,::-1])
             
-            plt.axis('off')
             plt.title(titulos[i])
         else:
-            # Sino la dibujamos directamente en escala de grises
             plt.imshow(imagen, cmap='gray')
-            plt.axis('off')
             plt.title(titulos[i])
     
     if not titulo_fig is None:
+        plt.axis('off')
         fig.suptitle(titulo_fig())
     
-    fig.tight_layout()
-    
-    # plt.savefig("imagenes_memoria/ejercicio_1/escalas_y_octavas", dpi=300, bbox_inches = "tight")
-    
+    fig.tight_layout()   
     plt.show()
 
 def mostrar_escalas_gaussianas (lista_octavas, num_escalas_totales):
@@ -340,55 +337,37 @@ def extraer_keypoints (imagen_ini, num_octavas_totales, num_escalas_totales,
     
     diameter = radio * 2
     
-    lista_DoG = obtener_octavas_DoG(imagen_ini, num_octavas_totales, num_escalas_totales, sigma_original)
-        
-    num_escalas_DoG = len(lista_DoG[0])
+    pir_lap = obtener_octavas_DoG(imagen_ini, num_octavas_totales, num_escalas_totales, sigma_original)
     
     # Vector de posibles keypoints: se guarda la posicion del pixel, su diametro,
     # su respuesta y la octava donde se identifico
     aux = []
-    dtype_raw_keypoints = [('x', float), ('y', float), ('size', float), ('response', float),
+    dtype_kp = [('x', float), ('y', float), ('size', float), ('response', float),
                            ('abs_response', float), ('octave', float)]
-    array_raw_keypoints = np.array(aux, dtype=dtype_raw_keypoints)
+    kp = np.array(aux, dtype=dtype_kp)
     
     
-    # Recorrer las octavas
-    for num_oct in range(0, len(lista_DoG)):
+    for num_oct in range(0, len(pir_lap)):
+        octava = pir_lap[num_oct]
+        mascara_opt = np.zeros(octava[0].shape)
+        marco_fil = octava[0].shape[0] - 1
+        marco_col = octava[0].shape[1] - 1
         
-        octava = lista_DoG[num_oct]
-        
-        mask_ext = np.zeros(octava[0].shape)
-        
-        borde_fil = octava[0].shape[0] - 1
-        borde_col = octava[0].shape[1] - 1
-        
-        # Ejecutar para las escalas centrales
-        for num_esc in range(1, num_escalas_DoG-1):
-            
-            # Recorrer los pixeles de la escala por columnas
-            for col in range(1, borde_col):
-                
-                # Recorrer los pixeles de la escala por filas
-                for fil in range(1, borde_fil):
-                    if mask_ext[fil][col] == 0:
-                        index_max_local = np.argmax(octava[num_esc-1:num_esc+2, fil-1:fil+2, col-1:col+2])
+        for num_esc in range(1, len(pir_lap[0])-1):
+            for j in range(1, marco_col):
+                for i in range(1, marco_fil):
+                    if mascara_opt[i][j] == 0:
+                        index_max_local = np.argmax(octava[num_esc-1:num_esc+2, i-1:i+2, j-1:j+2])
                         
-                        # Añadir a la lista de posibles keypoints solo si es mayor que todos sus vecinos
                         if index_max_local == 13:
                             sigmak = get_sigmak(sigma_original, num_escalas_totales, num_oct, num_esc)
+                            kp = np.append( kp,np.array((i*2**(num_oct-1), j*2**(num_oct-1),
+                                            diameter*sigmak,octava[num_esc][i][j],abs(octava[num_esc][i][j]),
+                                            num_oct),dtype=dtype_kp) )
                             
-                            array_raw_keypoints = np.append( array_raw_keypoints,
-                                                             np.array((fil*2**(num_oct-1), col*2**(num_oct-1),
-                                                                       diameter*sigmak,
-                                                                       octava[num_esc][fil][col],
-                                                                       abs(octava[num_esc][fil][col]),
-                                                                       num_oct),
-                                                                      dtype=dtype_raw_keypoints) )
-                            
-                            # Modificar la mascara de extremos
-                            mask_ext[fil-1:fil+2,col-1:col+2] = 1
+                            mascara_opt[i-1:i+2,j-1:j+2] = 1
     
-    return array_raw_keypoints
+    return kp
 
 
 def aniadir_keypoints_im (imagen_ini, array_keypoints): 
@@ -409,7 +388,7 @@ pir_lowe2 = calcular_octavas(imagen2,4)
 mostrar_escalas_gaussianas(pir_lowe, 3)
 mostrar_escalas_gaussianas(pir_lowe2,3)
 
-print('*'*60, '\nEjercicio 1D. Calcular las escalas y octavas DoG y obtener los extremos.\n')
+print('Ejercicio 1 D-E.')
 
 imagen = leeimagen('imagenes/Yosemite1.jpg', 0)
 imagen2 = leeimagen('imagenes/Yosemite2.jpg',0)
@@ -421,32 +400,17 @@ sigma_original = 1.6
 num_keypoints = 100
 radio = 6
 
-
-lista_octavas_DoG_1 = obtener_octavas_DoG(imagen, num_octavas_totales,
-                                           num_escalas_totales, sigma_original)
-
-lista_octavas_DoG_2 = obtener_octavas_DoG(imagen2, num_octavas_totales,
-                                           num_escalas_totales, sigma_original)
-
-
-mostrar_escalas_DoG(lista_octavas_DoG_1)
-mostrar_escalas_DoG(lista_octavas_DoG_2)
-
-
-inicio = time.time()
 array_keypoints1 = extraer_keypoints (imagen, num_octavas_totales, num_escalas_totales,
                                        sigma_original, num_keypoints, radio)
 
 
-
-# Ordenar de menor a mayor respuesta absoluta
+# Ordeno el vector por respuesta
 array_keypoints1 = np.sort(array_keypoints1, order='abs_response')
-# Guardar los num_keypoints keypoints con mayor respuesta (tanto los negativos como los positivos)
+
+# Guardar los 100 keypoints con mas respuesta
 if len(array_keypoints1) > num_keypoints:
     array_keypoints1 = array_keypoints1[-num_keypoints:]
 
-# Construir vector de keypoints
-# Como al mostrar la imagen se muestra invertida entonces las coordenadas de los puntos han de ser invertidas
 lista_keypoints = [cv.KeyPoint(x=float(math.ceil(kp['y'])), y=float(math.ceil(kp['x'])),
                                size=kp['size'], response=kp['response'],
                                octave=int(kp['octave']))
@@ -464,9 +428,11 @@ input("\n--- Pulsar tecla para continuar ---\n")
 array_keypoints2 = extraer_keypoints (imagen2, num_octavas_totales, num_escalas_totales,
                                       sigma_original, num_keypoints, radio)
 
-# Ordenar de menor a mayor respuesta absoluta
+
+# Ordeno el vector por respuesta
 array_keypoints2 = np.sort(array_keypoints2, order='abs_response')
-# Guardar los num_keypoints keypoints con mayor respuesta (tanto los negativos como los positivos)
+
+# Guardar los 100 keypoints con mas respuesta
 if len(array_keypoints2) > num_keypoints:
     array_keypoints2 = array_keypoints2[-num_keypoints:]
 
@@ -486,53 +452,18 @@ mostrarimagen(yosemite2_keypoints, "Yosemite 2 con keypoints")
 
 input("\n--- Pulsar tecla para continuar ---\n")
 
-# Realizar lo mismo pero con las funciones de OpenCV
-# Crear detector SIFT
-sift = cv.SIFT_create()
-
-# Obtener keypoints y descriptores
-kpts, desc = sift.detectAndCompute(imagen.astype('uint8'), None)
-im_keypoints = cv.drawKeypoints(imagen.astype('uint8'),
-                                 np.random.choice(kpts, num_keypoints),
-                                 np.array([]),
-                                 flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    
-mostrarimagen(im_keypoints, "Yosemite 1 con keypoints (OpenCV)")
-
-input("\n--- Pulsar tecla para continuar ---\n")
-
-# Crear detector SIFT
-sift = cv.SIFT_create()
-
-# Obtener keypoints y descriptores
-kpts, desc = sift.detectAndCompute(imagen2.astype('uint8'), None)
-im_keypoints = cv.drawKeypoints(imagen2.astype('uint8'),
-                                np.random.choice(kpts, num_keypoints),
-                                np.array([]),
-                                flags=cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    
-mostrarimagen(im_keypoints, "Yosemite 2 con keypoints (OpenCV)")
-
-
-input("\n--- Pulsar tecla para continuar ---\n")
-
 print('Ejercicio 2')
 
-def bruteForce(imagen1,imagen2,num_matches):
-    # Crear detector SIFT
+def FuerzaBruta(imagen1,imagen2,num_matches):
     sift = cv.SIFT_create()
     
-    # Obtener keypoints y descriptores de ambas imagenes
     kpts1, desc1 = sift.detectAndCompute(imagen1.astype('uint8'), None)
     kpts2, desc2 = sift.detectAndCompute(imagen2.astype('uint8'), None)
     
-    # Crear matcher
-    bf = cv.BFMatcher(normType=cv.NORM_L2, crossCheck=True)
+    bf = cv.BFMatcher( crossCheck=True)
 
-    # Encontrar correspondencias entre los descriptores
     matches = bf.match(desc1,desc2)
     
-    # Mostrar num_matches correspondencias aleatoriamente
     im_final = cv.drawMatches(imagen1.astype('uint8'), kpts1,
                                imagen2.astype('uint8'), kpts2,
                                random.sample(matches, num_matches),
@@ -540,49 +471,47 @@ def bruteForce(imagen1,imagen2,num_matches):
     
     return im_final
 
-def matchesLowe2NN (imagen1,imagen2,num_matches=100):
-    # Crear detector SIFT
+def coincidenciasLowe2NN (imagen1,imagen2,num_matches=100):
     sift = cv.SIFT_create()
     
-    # Obtener keypoints y descriptores de ambas imagenes
     kpts1, desc1 = sift.detectAndCompute(imagen1.astype('uint8'), None)
     kpts2, desc2 = sift.detectAndCompute(imagen2.astype('uint8'), None)
     
-    # BFMatcher with default params
     bf = cv.BFMatcher()
-    matches = bf.knnMatch(desc1, desc2, k=2)
+    coincidencias = bf.knnMatch(desc1, desc2, k=2)
     
     # Apply ratio test
-    good_matches = []
-    for m,n in matches:
-        if m.distance < 0.8*n.distance:
-            good_matches.append(m)
+    coincidencias_reales = []
+    for coincidencias_x,coincidencias_y in coincidencias:
+        if coincidencias_x.distance < 0.8*coincidencias_y.distance:
+            coincidencias_reales.append(coincidencias_x)
             
-    return kpts1, kpts2, good_matches
+    return kpts1, kpts2, coincidencias_reales
 
 def drawMatchesLowe2NN(imagen1, imagen2, num_matches):
-    kpts1, kpts2, matches = matchesLowe2NN(imagen1, imagen2)
+    kpts1, kpts2, matches = coincidenciasLowe2NN(imagen1, imagen2)
         
     im_final = cv.drawMatches(imagen1.astype('uint8'), kpts1,
                               imagen2.astype('uint8'), kpts2,
                               random.sample(matches, num_matches), np.array([]), flags=2)
     
     return im_final
+
+
 imagen = leeimagen('imagenes/Yosemite1.jpg', 0)
 imagen2 = leeimagen('imagenes/Yosemite2.jpg',0)
 
-im_matches_bruteForce = bruteForce(imagen, imagen2, 100)
-img_matches_Lowe2NN = drawMatchesLowe2NN(imagen,imagen2,100)
+img_fuerza_bruta = FuerzaBruta(imagen, imagen2, 100)
+img_Lowe2NN = drawMatchesLowe2NN(imagen,imagen2,100)
 
-mostrarimagen(im_matches_bruteForce,'Yosemite matches with BruteForce')
-mostrarimagen(img_matches_Lowe2NN,'Yosemite matches with Lowe2NN')
+mostrarimagen(img_fuerza_bruta,'Correspondencias Yosemite con Fuerza Bruta')
+mostrarimagen(img_Lowe2NN,'Correspondencias Yosemite con Lowe2NN')
 
 input("\n--- Pulsar tecla para continuar ---\n")
 
 print("Ejercicio 3")
 
 def get_canvas(lista_im):
-    # Obtener la suma de alturas y de anchuras de las imagenes
     len_y = 0
     len_x = 0
 
@@ -593,22 +522,17 @@ def get_canvas(lista_im):
     return np.zeros((len_x, len_y,3))
 
 def recortar_canvas(canvas):
-    # Mascara con los indices de los pixeles diferentes de cero
     diferentes_cero = np.nonzero(canvas)
     
-    # Primera fila y columna con contenido
     primera_columna = np.min(diferentes_cero[0])
     primera_fila = np.min(diferentes_cero[1])
     
-    # Primera fila y columna sin contenido
     ultima_columna  = np.max(diferentes_cero[0]) + 1
     ultima_fila = np.max(diferentes_cero[1]) + 1
     
-    # Eliminar desde la primera fila y columna sin contenido hasta el final del canvas
     canvas_final = np.delete(canvas, np.arange(ultima_columna, canvas.shape[0]), 0)
     canvas_final = np.delete(canvas_final, np.arange(ultima_fila, canvas.shape[1]), 1)
     
-    # Eliminar desde el inicio del canvas hasta la primera fila y columna con contenido
     canvas_final = np.delete(canvas_final, np.arange(0, primera_columna), 0)
     canvas_final = np.delete(canvas_final, np.arange(0, primera_fila), 1)
     
@@ -641,7 +565,7 @@ def construirmosaico(imagenes):
 
     # Crear homografia del extremo izquierdo hasta el centro
     while(ind_izq < index_centro):
-        kpts1, kpts2, matches = matchesLowe2NN(imagenes[ind_izq], imagenes[ind_izq+1])
+        kpts1, kpts2, matches = coincidenciasLowe2NN(imagenes[ind_izq], imagenes[ind_izq+1])
         
         im_siguiente_pts = np.float32([ kpts1[m.queryIdx].pt for m in matches ]).reshape(-1,1,2)
         im_centro_pts = np.float32([ kpts2[m.trainIdx].pt for m in matches ]).reshape(-1,1,2)
@@ -655,7 +579,7 @@ def construirmosaico(imagenes):
     
     # Crear homografias del extremo derecho hasta el centro
     while(ind_dcha > index_centro):
-        kpts_d1, kpts_d2, matches = matchesLowe2NN(imagenes[ind_dcha], imagenes[ind_dcha-1])
+        kpts_d1, kpts_d2, matches = coincidenciasLowe2NN(imagenes[ind_dcha], imagenes[ind_dcha-1])
         im_siguiente_pts = np.float32([ kpts_d1[m.queryIdx].pt for m in matches ]).reshape(-1,1,2)
         im_centro_pts = np.float32([ kpts_d2[m.trainIdx].pt for m in matches ]).reshape(-1,1,2)
         
@@ -712,8 +636,6 @@ def construirmosaico(imagenes):
         ind_dcha+=1
         ind_dcha_imagenes-=1
         
-        
-    print("sali bucles")
     canvas_fondo = cv.warpPerspective(imagenes[index_centro], h0,(y_canvas,x_canvas), dst=canvas_fondo, borderMode=cv.BORDER_TRANSPARENT)
     
     return recortar_canvas(canvas_fondo)
